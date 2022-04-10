@@ -48,7 +48,7 @@ async function signMessage() {
     xhr.open("POST", "/login", true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify({
-        name: signature,
-        quantity: 12345,
+        account: showAccount.innerHTML.toString(),
+        signature: signature,
     }));
 }

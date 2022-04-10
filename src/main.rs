@@ -104,19 +104,7 @@ async fn main() -> iota_wallet::Result<()> {
             res
         });
 
-    // POST /login/:rate  {"name":"Sean","rate":2}
-    // let login_user = warp::post()
-    //     .and(warp::path("login"))
-    //     .and(warp::path::param::<String>())
-    //     // Only accept bodies smaller than 16kb...
-    //     .and(warp::body::content_length_limit(1024 * 16))
-    //     .map(|signed_message: String| {
-    //         println!("{}", signed_message);
-    //         //warp::reply::json()
-    //         warp::reply::html("test")
-    //     });
-
-    let store = Store::new();
+    let store = UserList::new();
     let store_filter = warp::any().map(move || store.clone());
 
     let login_user = warp::post()
@@ -124,7 +112,7 @@ async fn main() -> iota_wallet::Result<()> {
         .and(warp::path::end())
         .and(warp::body::content_length_limit(1024 * 16).and(warp::body::json()))
         .and(store_filter.clone())
-        .and_then(add_grocery_list_item);
+        .and_then(add_user_list_item);
 
     warp::serve(hello.or(hi.or(template.or(style.or(js.or(login_user))))))
         .run(([127, 0, 0, 1], 3030))
@@ -137,32 +125,36 @@ use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-type Items = HashMap<String, i32>;
+type Users = HashMap<String, String>;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-struct Item {
-    name: String,
-    quantity: i32,
+struct NewUser {
+    account: String,
+    signature: String,
 }
 
 #[derive(Clone)]
-struct Store {
-    grocery_list: Arc<RwLock<Items>>,
+struct UserList {
+    user_list: Arc<RwLock<Users>>,
 }
 
-impl Store {
+impl UserList {
     fn new() -> Self {
-        Store {
-            grocery_list: Arc::new(RwLock::new(HashMap::new())),
+        UserList {
+            user_list: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
 
-async fn add_grocery_list_item(
-    item: Item,
-    store: Store,
+async fn add_user_list_item(
+    item: NewUser,
+    store: UserList,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    store.grocery_list.write().insert(item.name, item.quantity);
+    store
+        .user_list
+        .write()
+        .insert(item.signature.clone(), item.account.clone());
+    println!("user: {:?}", item);
 
     Ok(warp::reply::with_status(
         "Added items to the grocery list",
