@@ -1,5 +1,7 @@
+use crate::UserManager;
 use askama::Template;
 use http::{Response, StatusCode};
+use serde_derive::{Deserialize, Serialize};
 use tokio::fs;
 
 pub async fn hello_page(name: String) -> Result<impl warp::Reply, warp::Rejection> {
@@ -50,4 +52,30 @@ pub async fn template_page() -> Result<impl warp::Reply, warp::Rejection> {
 
     let res: Box<dyn warp::Reply> = Box::new(res);
     Ok(res)
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NewUser {
+    account: String,
+    signature: String,
+}
+
+pub async fn add_user_page(
+    new_user: NewUser,
+    mut user_manager: UserManager,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    user_manager.add_user(&new_user.account).unwrap();
+    println!("New User: {:?}", new_user);
+    println!(
+        "Total users in database: {}",
+        user_manager.users.read().len()
+    );
+    for (_, user) in user_manager.users.read().iter() {
+        println!("{}", user.address());
+    }
+
+    let reply = warp::reply::with_status("Added new user to users list", http::StatusCode::CREATED);
+    let value = format!("address={}", new_user.account);
+    let reply = warp::reply::with_header(reply, "set-cookie", value);
+    Ok(reply)
 }
