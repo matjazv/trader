@@ -79,7 +79,14 @@ pub async fn server_run(user_manager: UserManager) -> Result<(), Box<dyn Error>>
         .and(warp::any().map(move || user_manager.clone()))
         .and_then(add_user_list_item);
 
-    warp::serve(hello.or(hi.or(template.or(style.or(js.or(login_user))))))
+    let check_cookie = warp::path("cookie")
+        .and(warp::header("user-agent"))
+        .and(warp::cookie("address"))
+        .map(|agent: String, cookie: String| {
+            format!("Your agent is {}. Cookie value: {}", agent, cookie)
+        });
+
+    warp::serve(hello.or(hi.or(template.or(style.or(js.or(login_user.or(check_cookie)))))))
         .run(([127, 0, 0, 1], 3030))
         .await;
 
@@ -109,8 +116,8 @@ async fn add_user_list_item(
         println!("{}", user.address());
     }
 
-    Ok(warp::reply::with_status(
-        "Added new user to users list",
-        http::StatusCode::CREATED,
-    ))
+    let reply = warp::reply::with_status("Added new user to users list", http::StatusCode::CREATED);
+    let value = format!("address={}", item.account);
+    let reply = warp::reply::with_header(reply, "set-cookie", value);
+    Ok(reply)
 }
