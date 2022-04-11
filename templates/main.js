@@ -21,6 +21,7 @@ async function getAccount() {
 
 const signMessageButton = document.querySelector('.signMessageButton');
 const showSignedMessage = document.querySelector('.showSignedMessage');
+const showCheckSignedMessage = document.querySelector('.showCheckSignedMessage');
 
 signMessageButton.addEventListener('click', () => {
     signMessage();
@@ -39,8 +40,10 @@ async function signMessage() {
     // For this, you need the account signer...
     const signer = provider.getSigner()
 
-    let signature = await signer.signMessage("Hi there from IOTA Trader! Sign this message to prove you have access to this wallet and we'll log you in. This won't cost you any IOTA.\n" +
-        "To stop hackers using your wallet, here's a unique message ID they can't guess: d458fa15-dcab-4d85-a477–004d6febca12");
+    let message = "Hi there from IOTA Trader! Sign this message to prove you have access to this wallet and we'll log you in. This won't cost you any IOTA.\n" +
+        "To stop hackers using your wallet, here's a unique message ID they can't guess: d458fa15-dcab-4d85-a477–004d6febca12"
+
+    let signature = await signer.signMessage(message);
 
     showSignedMessage.innerHTML = signature;
 
@@ -51,4 +54,8 @@ async function signMessage() {
         account: showAccount.innerHTML.toString(),
         signature: signature,
     }));
+
+    // Check signature
+    let address = ethers.utils.verifyMessage(message, signature);
+    showCheckSignedMessage.innerHTML = address;
 }

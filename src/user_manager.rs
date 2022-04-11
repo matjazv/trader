@@ -1,5 +1,6 @@
 use crate::User;
 use std::collections::HashMap;
+use std::error::Error;
 
 pub struct UserManager {
     pub users: HashMap<String, User>,
@@ -12,7 +13,7 @@ impl UserManager {
         }
     }
 
-    pub fn add_user(&mut self, address: &str) -> Result<User, Box<dyn std::error::Error>> {
+    pub fn add_user(&mut self, address: &str) -> Result<User, Box<dyn Error>> {
         if self.users.contains_key(address) {
             return Err("User already exists.".into());
         }
@@ -22,7 +23,8 @@ impl UserManager {
         Ok(user)
     }
 
-    pub fn get_user(&self, address: &String) -> Result<User, Box<dyn std::error::Error>> {
+    #[allow(dead_code)]
+    pub fn get_user(&self, address: &String) -> Result<User, Box<dyn Error>> {
         match self.users.get(address) {
             None => Err("User does not exist.".into()),
             Some(user) => Ok(user.clone()),

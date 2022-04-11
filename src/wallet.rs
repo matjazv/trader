@@ -1,4 +1,3 @@
-use crate::User;
 use iota_wallet::{
     account::AccountHandle, account_manager::AccountManager, signing::mnemonic::MnemonicSigner,
     ClientOptions,
