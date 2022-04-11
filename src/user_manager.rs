@@ -1,31 +1,35 @@
 use crate::User;
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct UserManager {
-    pub users: HashMap<String, User>,
+    pub users: Arc<RwLock<HashMap<String, User>>>,
 }
 
 impl UserManager {
     pub fn init() -> UserManager {
         UserManager {
-            users: HashMap::new(),
+            users: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     pub fn add_user(&mut self, address: &str) -> Result<User, Box<dyn Error>> {
-        if self.users.contains_key(address) {
+        let address = address.to_ascii_lowercase();
+        if self.users.read().contains_key(&address) {
             return Err("User already exists.".into());
         }
 
-        let user = User::new(address);
-        self.users.insert(address.to_string(), user.clone());
+        let user = User::new(&address);
+        self.users.write().insert(address, user.clone());
         Ok(user)
     }
 
     #[allow(dead_code)]
     pub fn get_user(&self, address: &String) -> Result<User, Box<dyn Error>> {
-        match self.users.get(address) {
+        match self.users.read().get(address) {
             None => Err("User does not exist.".into()),
             Some(user) => Ok(user.clone()),
         }

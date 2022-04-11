@@ -16,11 +16,11 @@ async fn main() -> iota_wallet::Result<()> {
         .add_user("0x8bb449c7cc4a7822da23a0ffdc27de1f935681ef")
         .unwrap();
     user_manager
-        .add_user("0xf1f758A55B8Ac233a4B0573E21783E131E4d2719")
+        .add_user("0x5Ac233a4B0573E21783E131E4d27199356e7fdda")
         .unwrap();
 
     let manager = get_manager().await.unwrap();
-    for (_, user) in user_manager.users.iter() {
+    for (_, user) in user_manager.users.read().iter() {
         let account = get_account(&manager, user.address()).await.unwrap();
 
         account.generate_addresses(5, None).await?;
@@ -36,7 +36,7 @@ async fn main() -> iota_wallet::Result<()> {
         println!("Accounts: {:#?}", a);
     }
 
-    server_run().await.unwrap();
+    server_run(user_manager).await.unwrap();
 
     Ok(())
 }

@@ -7,7 +7,7 @@ pub struct User {
 impl User {
     pub fn new(address: &str) -> User {
         User {
-            address: address.to_string(),
+            address: address.to_ascii_lowercase(),
             nick_name: "".to_string(),
         }
     }

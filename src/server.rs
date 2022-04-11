@@ -32,7 +32,7 @@ where
     }
 }
 
-pub async fn server_run() -> Result<(), Box<dyn Error>> {
+pub async fn server_run(user_manager: UserManager) -> Result<(), Box<dyn Error>> {
     let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
 
     let hi = warp::path("hi")
@@ -72,14 +72,11 @@ pub async fn server_run() -> Result<(), Box<dyn Error>> {
             res
         });
 
-    let store = UserList::new();
-    let store_filter = warp::any().map(move || store.clone());
-
     let login_user = warp::post()
         .and(warp::path("login"))
         .and(warp::path::end())
         .and(warp::body::content_length_limit(1024 * 16).and(warp::body::json()))
-        .and(store_filter.clone())
+        .and(warp::any().map(move || user_manager.clone()))
         .and_then(add_user_list_item);
 
     warp::serve(hello.or(hi.or(template.or(style.or(js.or(login_user))))))
@@ -89,11 +86,8 @@ pub async fn server_run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-use parking_lot::RwLock;
+use crate::UserManager;
 use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
-
-type Users = HashMap<String, String>;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct NewUser {
@@ -101,31 +95,22 @@ struct NewUser {
     signature: String,
 }
 
-#[derive(Clone)]
-struct UserList {
-    user_list: Arc<RwLock<Users>>,
-}
-
-impl UserList {
-    fn new() -> Self {
-        UserList {
-            user_list: Arc::new(RwLock::new(HashMap::new())),
-        }
-    }
-}
-
 async fn add_user_list_item(
     item: NewUser,
-    store: UserList,
+    mut user_manager: UserManager,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    store
-        .user_list
-        .write()
-        .insert(item.signature.clone(), item.account.clone());
+    user_manager.add_user(&item.account).unwrap();
     println!("user: {:?}", item);
+    println!(
+        "Total users in database: {}",
+        user_manager.users.read().len()
+    );
+    for (_, user) in user_manager.users.read().iter() {
+        println!("{}", user.address());
+    }
 
     Ok(warp::reply::with_status(
-        "Added items to the grocery list",
+        "Added new user to users list",
         http::StatusCode::CREATED,
     ))
 }
