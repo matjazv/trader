@@ -43,14 +43,13 @@ where
 
 #[tokio::main]
 async fn main() -> iota_wallet::Result<()> {
-    let users = vec![
-        User::new("0x8bb449c7cc4a7822da23a0ffdc27de1f935681ef".to_string()),
-        User::new("0xf1f758A55B8Ac233a4B0573E21783E131E4d2719".to_string()),
-    ];
+    let mut user_manager = UserManager::init();
+    user_manager.add_user("0x8bb449c7cc4a7822da23a0ffdc27de1f935681ef");
+    user_manager.add_user("0xf1f758A55B8Ac233a4B0573E21783E131E4d2719");
 
     let manager = get_manager().await.unwrap();
-    for user in users {
-        let account = get_account(&manager, user).await.unwrap();
+    for (address, _) in user_manager.users.iter() {
+        let account = get_account(&manager, address).await.unwrap();
 
         account.generate_addresses(5, None).await?;
         let addresses = account.list_addresses().await?;
@@ -121,6 +120,7 @@ async fn main() -> iota_wallet::Result<()> {
     Ok(())
 }
 
+use crate::user_manager::UserManager;
 use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -1,13 +1,13 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct User {
     address: String,
     nick_name: String,
 }
 
 impl User {
-    pub fn new(address: String) -> User {
+    pub fn new(address: &str) -> User {
         User {
-            address: address,
+            address: address.to_string(),
             nick_name: "".to_string(),
         }
     }

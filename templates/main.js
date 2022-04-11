@@ -2,8 +2,7 @@ const metamaskStatus = document.querySelector('.metamaskStatus');
 
 if (typeof window.ethereum !== 'undefined') {
     metamaskStatus.innerHTML = 'MetaMask is installed!';
-}
-else{
+} else {
     metamaskStatus.innerHTML = 'MetaMask is NOT installed!';
 }
 
@@ -15,7 +14,7 @@ loginButton.addEventListener('click', () => {
 });
 
 async function getAccount() {
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const accounts = await ethereum.request({method: 'eth_requestAccounts'});
     const account = accounts[0];
     showAccount.innerHTML = account;
 }
@@ -40,7 +39,8 @@ async function signMessage() {
     // For this, you need the account signer...
     const signer = provider.getSigner()
 
-    let signature = await signer.signMessage("Hello World!");
+    let signature = await signer.signMessage("Hi there from IOTA Trader! Sign this message to prove you have access to this wallet and we'll log you in. This won't cost you any IOTA.\n" +
+        "To stop hackers using your wallet, here's a unique message ID they can't guess: d458fa15-dcab-4d85-a477–004d6febca12");
 
     showSignedMessage.innerHTML = signature;
 

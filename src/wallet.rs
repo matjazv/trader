@@ -26,18 +26,18 @@ pub async fn get_manager() -> iota_wallet::Result<AccountManager> {
 
 pub async fn get_account(
     manager: &AccountManager,
-    user: User,
+    address: &str,
 ) -> iota_wallet::Result<AccountHandle> {
-    println!("Getting account for user: {}", user.address());
+    println!("Getting account for address: {}", address);
 
     // Get account or create a new one
-    let account = match manager.get_account(user.address()).await {
+    let account = match manager.get_account(address).await {
         Ok(account) => account,
         _ => {
             // first we'll create an example account and store it
             manager
                 .create_account()
-                .with_alias(user.address().to_string())
+                .with_alias(address.to_string())
                 .finish()
                 .await?
         }
