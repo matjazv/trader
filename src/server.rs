@@ -1,76 +1,30 @@
-use crate::site::HelloTemplate;
-use askama::Template;
-use http::{Response, StatusCode};
+use crate::site::{check_cookie_page, hello_page, hi_page, js_page, style_page, template_page};
 use std::error::Error;
-use std::fs;
-use std::sync::Arc;
 use warp::Filter;
 
-trait ForWarp {
-    type Reply;
-
-    fn for_warp(self) -> Result<Self::Reply, warp::Rejection>;
-}
-
-impl<T> ForWarp for Result<T, Box<dyn Error>>
-where
-    T: warp::Reply + 'static,
-{
-    type Reply = Box<dyn warp::Reply>;
-
-    fn for_warp(self) -> Result<Self::Reply, warp::Rejection> {
-        let b: Box<dyn warp::Reply> = match self {
-            Ok(reply) => Box::new(reply),
-            Err(_e) => {
-                let res = http::Response::builder()
-                    .status(500)
-                    .body("Something went wrong, apologies.");
-                Box::new(res)
-            }
-        };
-        Ok(b)
-    }
-}
-
 pub async fn server_run(user_manager: UserManager) -> Result<(), Box<dyn Error>> {
-    let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
+    let hello = warp::path!("hello" / String)
+        .and(warp::path::end())
+        .and_then(hello_page);
 
     let hi = warp::path("hi")
         .and(warp::path::param())
         .and(warp::header("user-agent"))
-        .map(|param: String, agent: String| format!("Hello {}, whose agent is {}", param, agent));
+        .and_then(hi_page);
 
-    let hello_template = HelloTemplate { name: "Matjaz" };
-    //println!("{}", hello_template.render().unwrap());
-
-    let hello_template = Arc::new(hello_template);
-    let template = warp::path!("temp").map(move || {
-        Response::builder()
-            .status(StatusCode::OK)
-            .header("content-type", "text/html; charset=utf-8")
-            .body(hello_template.render().unwrap().to_string())
-            .unwrap()
-    });
+    let template = warp::path!("temp")
+        .and(warp::path::end())
+        .and_then(template_page);
 
     let style = warp::filters::method::get()
         .and(warp::path!("style.css"))
-        .and_then(|| async move {
-            let res = Ok(Response::builder()
-                .header("content-type", "text/css; charset=utf-8")
-                .body(fs::read_to_string("templates/style.css").unwrap()))
-            .for_warp();
-            res
-        });
+        .and(warp::path::end())
+        .and_then(style_page);
 
     let js = warp::filters::method::get()
         .and(warp::path!("main.js"))
-        .and_then(|| async move {
-            let res = Ok(Response::builder()
-                .header("content-type", "text/javascript; charset=utf-8")
-                .body(fs::read_to_string("templates/main.js").unwrap()))
-            .for_warp();
-            res
-        });
+        .and(warp::path::end())
+        .and_then(js_page);
 
     let login_user = warp::post()
         .and(warp::path("login"))
@@ -80,11 +34,9 @@ pub async fn server_run(user_manager: UserManager) -> Result<(), Box<dyn Error>>
         .and_then(add_user_list_item);
 
     let check_cookie = warp::path("cookie")
-        .and(warp::header("user-agent"))
+        .and(warp::path::end())
         .and(warp::cookie("address"))
-        .map(|agent: String, cookie: String| {
-            format!("Your agent is {}. Cookie value: {}", agent, cookie)
-        });
+        .and_then(check_cookie_page);
 
     warp::serve(hello.or(hi.or(template.or(style.or(js.or(login_user.or(check_cookie)))))))
         .run(([127, 0, 0, 1], 3030))
