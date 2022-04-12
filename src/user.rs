@@ -1,19 +1,19 @@
 #[derive(Clone, Debug)]
 pub struct User {
-    address: String,
+    account: String,
     nick_name: String,
 }
 
 impl User {
-    pub fn new(address: &str) -> User {
+    pub fn new(account: &str) -> User {
         User {
-            address: address.to_ascii_lowercase(),
+            account: account.to_ascii_lowercase(),
             nick_name: "".to_string(),
         }
     }
 
-    pub fn address(&self) -> &String {
-        &self.address
+    pub fn account(&self) -> &String {
+        &self.account
     }
 
     #[allow(dead_code)]

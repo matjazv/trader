@@ -28,8 +28,6 @@ pub async fn server_run(user_manager: UserManager) -> Result<(), Box<dyn Error>>
 
     let logout = warp::path("logout")
         .and(warp::path::end())
-        .and((warp::cookie("account")).or(warp::any().map(String::default)))
-        .unify()
         .and_then(logout_page);
 
     warp::serve(style.or(js.or(main.or(login.or(logout)))))

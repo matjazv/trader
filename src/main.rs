@@ -21,7 +21,7 @@ async fn main() -> iota_wallet::Result<()> {
 
     let manager = get_manager().await.unwrap();
     for (_, user) in user_manager.users.read().iter() {
-        let account = get_account(&manager, user.address()).await.unwrap();
+        let account = get_account(&manager, user.account()).await.unwrap();
 
         account.generate_addresses(5, None).await?;
         let addresses = account.list_addresses().await?;
