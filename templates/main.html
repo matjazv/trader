@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>IOTA Trader</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+<p>Metamask status: <span class="metamaskStatus"></span></p>
+
+{% if account.len() == 0 %}
+    <p>Please log in!</p>
+    <button class="loginWithMetamaskButton">Login with Metamask</button>
+{% else %}
+    <p>Pozdravljen, {{ account }}! <button class="logoutButton">Log out</button></p>
+    <p>Account: <span class="showAccount"></span></p>
+    <p><button class="showAccountButton">Show account address</button></p>
+
+    <p><button class="signMessageButton">Sign message</button></p>
+    <p>Signature: <span class="showSignedMessage"></span></p>
+    <p>Signature check: <span class="showCheckSignedMessage"></span></p>
+{% endif %}
+
+<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+<script src="main.js"></script>
+</body>
+
+</html>

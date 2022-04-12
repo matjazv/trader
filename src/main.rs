@@ -1,5 +1,5 @@
+mod page;
 mod server;
-mod site;
 mod user;
 mod user_manager;
 mod wallet;

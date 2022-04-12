@@ -18,9 +18,9 @@ impl UserManager {
 
     pub fn add_user(&mut self, address: &str) -> Result<User, Box<dyn Error>> {
         let address = address.to_ascii_lowercase();
-        if self.users.read().contains_key(&address) {
+        /*if self.users.read().contains_key(&address) {
             return Err("User already exists.".into());
-        }
+        }*/
 
         let user = User::new(&address);
         self.users.write().insert(address, user.clone());
