@@ -20,21 +20,14 @@ pub async fn js_page() -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     Ok(res)
 }
 
-pub async fn log_out_page(cookie: String) -> Result<impl warp::Reply, warp::Rejection> {
-    let _cookie = cookie;
-    let reply = warp::reply::with_status("Log out user", http::StatusCode::CREATED);
-    let reply = warp::reply::with_header(reply, "set-cookie", "account=; SameSite=strict");
-    Ok(reply)
-}
-
 #[derive(Template)]
 #[template(path = "main.html")]
 pub struct MainPageTemplate<'a> {
     pub account: &'a str,
 }
 
-pub async fn main_page(cookie: String) -> Result<impl warp::Reply, warp::Rejection> {
-    let main_page_template = MainPageTemplate { account: &cookie };
+pub async fn main_page(account: String) -> Result<impl warp::Reply, warp::Rejection> {
+    let main_page_template = MainPageTemplate { account: &account };
 
     let response = Response::builder()
         .status(StatusCode::OK)
@@ -52,22 +45,39 @@ pub struct NewUser {
     signature: String,
 }
 
-pub async fn add_user_page(
+pub async fn login_page(
     new_user: NewUser,
     mut user_manager: UserManager,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    user_manager.add_user(&new_user.account).unwrap();
-    println!("New User: {:?}", new_user);
-    println!(
-        "Total users in database: {}",
-        user_manager.users.read().len()
-    );
-    for (_, user) in user_manager.users.read().iter() {
-        println!("{}", user.address());
-    }
+    if let Ok(_user) = user_manager.get_user(&new_user.account) {
+        let reply =
+            warp::reply::with_status("Added new user to users list", http::StatusCode::CREATED);
+        let cookie_value = format!("account={}; SameSite=strict", new_user.account);
+        let reply = warp::reply::with_header(reply, "set-cookie", cookie_value);
+        Ok(reply)
+    } else {
+        user_manager.add_user(&new_user.account).unwrap();
+        println!("New User: {:?}", new_user);
+        println!(
+            "Total users in database: {}",
+            user_manager.users.read().len()
+        );
+        for (_, user) in user_manager.users.read().iter() {
+            println!("{}", user.address());
+        }
 
-    let reply = warp::reply::with_status("Added new user to users list", http::StatusCode::CREATED);
-    let value = format!("account={}; SameSite=strict", new_user.account);
-    let reply = warp::reply::with_header(reply, "set-cookie", value);
+        let reply =
+            warp::reply::with_status("Added new user to users list", http::StatusCode::CREATED);
+        let cookie_value = format!("account={}; SameSite=strict", new_user.account);
+        let reply = warp::reply::with_header(reply, "set-cookie", cookie_value);
+        Ok(reply)
+    }
+}
+
+pub async fn logout_page(cookie: String) -> Result<impl warp::Reply, warp::Rejection> {
+    let _cookie = cookie;
+    let reply = warp::reply::with_status("Log out user", http::StatusCode::CREATED);
+    let cookie_value = format!("account=; SameSite=strict");
+    let reply = warp::reply::with_header(reply, "set-cookie", cookie_value);
     Ok(reply)
 }
