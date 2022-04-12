@@ -1,11 +1,13 @@
 mod page;
 mod server;
 mod user;
+mod user_database;
 mod user_manager;
 mod wallet;
 
 use server::server_run;
 use user::User;
+use user_database::UserDatabase;
 use user_manager::UserManager;
 use wallet::{get_account, get_manager};
 
@@ -35,6 +37,13 @@ async fn main() -> iota_wallet::Result<()> {
         let a = account.read().await;
         println!("Accounts: {:#?}", a);
     }
+
+    let mut user = User::new("Mihec");
+    user.set_nick_name("Pihec");
+    let user_database = UserDatabase::connect().unwrap();
+    user_database.create_table();
+    user_database.add_user(user);
+    user_database.get_user("Mihec");
 
     server_run(user_manager).await.unwrap();
 
