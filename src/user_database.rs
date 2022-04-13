@@ -1,5 +1,6 @@
 use crate::User;
 use lazy_static::lazy_static;
+use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Result;
 use std::error::Error;
@@ -17,12 +18,22 @@ lazy_static! {
 }
 
 #[derive(Clone, Debug)]
-pub struct UserDatabase {}
+pub struct UserDatabase {
+    connection: Pool<SqliteConnectionManager>,
+}
 
 impl UserDatabase {
+    pub fn new() -> UserDatabase {
+        UserDatabase {
+            connection: SQLITEPOOL.to_owned(),
+        }
+    }
+
     pub fn create_tables(&self) -> bool {
-        let conn = SQLITEPOOL.get().unwrap();
-        if conn
+        if self
+            .connection
+            .get()
+            .unwrap()
             .execute(
                 "CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY,
@@ -40,8 +51,10 @@ impl UserDatabase {
     }
 
     pub fn add_user(&self, user: &User) -> bool {
-        let conn = SQLITEPOOL.get().unwrap();
-        if conn
+        if self
+            .connection
+            .get()
+            .unwrap()
             .execute(
                 "INSERT INTO user (account, nickName) VALUES (?1, ?2)",
                 &[&user.account(), &user.nick_name()],
@@ -55,8 +68,8 @@ impl UserDatabase {
     }
 
     pub fn get_user(&self, account: &str) -> Result<User, Box<dyn Error>> {
-        let conn = SQLITEPOOL.get().unwrap();
-        let mut statement = conn.prepare("SELECT * FROM user WHERE account = ?;")?;
+        let connection = self.connection.get().unwrap();
+        let mut statement = connection.prepare("SELECT * FROM user WHERE account = ?;")?;
         let mut person_iter = statement.query_map([account], |row| {
             let account: String = row.get(1)?;
             let nick_name: String = row.get(2)?;

@@ -13,7 +13,7 @@ use wallet::get_manager;
 
 #[tokio::main]
 async fn main() -> iota_wallet::Result<()> {
-    let user_database = UserDatabase {};
+    let user_database = UserDatabase::new();
     let user_manager = UserManager::init(&user_database);
 
     let manager = get_manager().await.unwrap();
