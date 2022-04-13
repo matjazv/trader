@@ -1,44 +1,63 @@
 use crate::User;
-use rusqlite::{params, Connection, Result, NO_PARAMS};
+use lazy_static::lazy_static;
+use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::Result;
+use std::error::Error;
 
-pub struct UserDatabase {
-    connection: Connection,
+pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
+
+lazy_static! {
+    pub static ref SQLITEPOOL: SqlitePool = {
+        let sqlite_database = "trader.db";
+        let manager = SqliteConnectionManager::file(&sqlite_database);
+        let pool = r2d2::Pool::builder().build(manager).unwrap();
+
+        pool
+    };
 }
 
-impl UserDatabase {
-    pub fn connect() -> Option<UserDatabase> {
-        let connection = Connection::open_in_memory();
-        match connection {
-            Ok(connection) => Some(UserDatabase { connection }),
-            Err(_) => None,
-        }
-    }
+#[derive(Clone, Debug)]
+pub struct UserDatabase {}
 
-    pub fn create_table(&self) {
-        self.connection
+impl UserDatabase {
+    pub fn create_tables(&self) -> bool {
+        let conn = SQLITEPOOL.get().unwrap();
+        if conn
             .execute(
                 "CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY,
                         account TEXT NOT NULL,
                         nickName TEXT NOT NULL
                       )",
-                NO_PARAMS,
+                [],
             )
-            .unwrap();
+            .is_err()
+        {
+            return false;
+        }
+
+        true
     }
 
-    pub fn add_user(&self, user: User) {
-        self.connection
+    pub fn add_user(&self, user: &User) -> bool {
+        let conn = SQLITEPOOL.get().unwrap();
+        if conn
             .execute(
                 "INSERT INTO user (account, nickName) VALUES (?1, ?2)",
                 &[&user.account(), &user.nick_name()],
             )
-            .unwrap();
+            .is_err()
+        {
+            return false;
+        }
+
+        true
     }
 
-    pub fn get_user(&self, account: &str) -> Result<()> {
-        let mut stmt = self.connection.prepare("SELECT * FROM user")?;
-        let person_iter = stmt.query_map([], |row| {
+    pub fn get_user(&self, account: &str) -> Result<User, Box<dyn Error>> {
+        let conn = SQLITEPOOL.get().unwrap();
+        let mut statement = conn.prepare("SELECT * FROM user WHERE account = ?;")?;
+        let mut person_iter = statement.query_map([account], |row| {
             let account: String = row.get(1)?;
             let nick_name: String = row.get(2)?;
             let mut user = User::new(&account);
@@ -46,10 +65,10 @@ impl UserDatabase {
             Ok(user)
         })?;
 
-        for person in person_iter {
-            println!("Found person {:?}", person.unwrap());
+        if let Some(person) = person_iter.next() {
+            return Ok(person.unwrap());
         }
 
-        Ok(())
+        Err("No user found".into())
     }
 }

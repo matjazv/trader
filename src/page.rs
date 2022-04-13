@@ -54,13 +54,6 @@ pub async fn login_page(
     if user_manager.get_user(&login_user.account).is_none() {
         user_manager.add_user(&login_user.account).unwrap();
         println!("New User: {:?}", login_user);
-        println!(
-            "Total users in database: {}",
-            user_manager.users.read().len()
-        );
-        for (_, user) in user_manager.users.read().iter() {
-            println!("{}", user.account());
-        }
     }
 
     let cookie_value = format!("account={}; SameSite=strict", login_user.account);

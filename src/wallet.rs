@@ -23,6 +23,7 @@ pub async fn get_manager() -> iota_wallet::Result<AccountManager> {
     Ok(manager)
 }
 
+#[allow(dead_code)]
 pub async fn get_account(
     manager: &AccountManager,
     address: &str,
