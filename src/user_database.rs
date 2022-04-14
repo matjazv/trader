@@ -1,21 +1,8 @@
 use crate::User;
-use lazy_static::lazy_static;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Result;
 use std::error::Error;
-
-pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
-
-lazy_static! {
-    pub static ref SQLITEPOOL: SqlitePool = {
-        let sqlite_database = "trader.db";
-        let manager = SqliteConnectionManager::file(&sqlite_database);
-        let pool = r2d2::Pool::builder().build(manager).unwrap();
-
-        pool
-    };
-}
 
 #[derive(Clone, Debug)]
 pub struct UserDatabase {
@@ -24,9 +11,11 @@ pub struct UserDatabase {
 
 impl UserDatabase {
     pub fn new() -> UserDatabase {
-        UserDatabase {
-            connection: SQLITEPOOL.to_owned(),
-        }
+        let sqlite_database = "trader.db";
+        let manager = SqliteConnectionManager::file(&sqlite_database);
+        let pool = r2d2::Pool::builder().build(manager).unwrap();
+
+        UserDatabase { connection: pool }
     }
 
     pub fn create_tables(&self) -> bool {

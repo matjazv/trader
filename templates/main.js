@@ -72,8 +72,8 @@ async function loginUser() {
     // For this, you need the account signer...
     const signer = await provider.getSigner()
 
-    let message = "Hi there from IOTA Trader! Sign this message to prove you have access to this wallet and we'll log you in. This won't cost you any IOTA.\n" +
-        "To stop hackers using your wallet, here's a unique message ID they can't guess: d458fa15-dcab-4d85-a477–004d6febca12"
+    //let message = "Hi there from IOTA Trader! Sign this message to prove you have access to this wallet and we'll log you in. This won't cost you any IOTA. To stop hackers using your wallet, here's a unique message ID they can't guess: d458fa15-dcab-4d85-a477–004d6febca12";
+    let message = "Please sign message.";
 
     let signature = await signer.signMessage(message);
 

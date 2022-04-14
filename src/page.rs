@@ -3,6 +3,7 @@ use askama::Template;
 use http::{Response, StatusCode};
 use serde_derive::{Deserialize, Serialize};
 use tokio::fs;
+use web3::signing::{keccak256, recover};
 
 pub async fn style_page() -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     let response = Response::builder()
@@ -47,10 +48,40 @@ pub struct LoginUser {
     signature: String,
 }
 
+fn eth_message(message: String) -> [u8; 32] {
+    keccak256(
+        format!(
+            "{}{}{}",
+            "\x19Ethereum Signed Message:\n",
+            message.len(),
+            message
+        )
+        .as_bytes(),
+    )
+}
+
 pub async fn login_page(
     login_user: LoginUser,
     mut user_manager: UserManager,
 ) -> Result<impl warp::Reply, warp::Rejection> {
+    let message = "Please sign message.";
+    let message = eth_message(message.to_string());
+    let signature = hex::decode(&login_user.signature[2..]).unwrap();
+
+    let pubkey = recover(&message, &signature[..64], 0);
+    let pubkey = pubkey.unwrap();
+    let pubkey = format!("{:02X?}", pubkey);
+    if pubkey != login_user.account {
+        println!("User failed to sign a message!");
+
+        let response = Response::builder()
+            .status(StatusCode::OK)
+            .header("set-cookie", "account=; SameSite=strict")
+            .body("");
+        let response: Box<dyn warp::Reply> = Box::new(response);
+        return Ok(response);
+    }
+
     if user_manager.get_user(&login_user.account).is_none() {
         user_manager.add_user(&login_user.account).unwrap();
         println!("New User: {:?}", login_user);
