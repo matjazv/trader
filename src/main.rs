@@ -1,19 +1,22 @@
+pub(crate) mod database;
 mod page;
 mod server;
 mod user;
-mod user_database;
 mod user_manager;
 mod wallet;
 
+use crate::database::Database;
+use database::user_table::UserTable;
 use server::server_run;
 use user::User;
-use user_database::UserDatabase;
 use user_manager::UserManager;
 use wallet::get_manager;
 
 #[tokio::main]
 async fn main() -> iota_wallet::Result<()> {
-    let user_database = UserDatabase::new();
+    let database = Database::new();
+    database.create_tables();
+    let user_database = UserTable::new(database);
     let user_manager = UserManager::init(&user_database);
 
     let manager = get_manager().await.unwrap();
@@ -35,7 +38,6 @@ async fn main() -> iota_wallet::Result<()> {
 
     let mut user = User::new("mihec");
     user.set_nick_name("pihec");
-    user_database.create_tables();
     user_database.add_user(&user);
     let account = user_database.get_user("mihec").unwrap();
     println!("Found account {:?}", account);
