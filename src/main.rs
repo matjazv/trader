@@ -37,7 +37,7 @@ async fn main() -> iota_wallet::Result<()> {
     }
 
     let mut user = User::new("mihec");
-    user.set_nick_name("pihec");
+    user.nick_name = "pihec".to_string();
     user_database.add_user(&user);
     let account = user_database.get_user("mihec").unwrap();
     println!("Found account {:?}", account);

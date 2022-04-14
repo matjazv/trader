@@ -19,7 +19,7 @@ impl UserTable {
             .get_connection()
             .execute(
                 "INSERT INTO user (account, nickName) VALUES (?1, ?2)",
-                &[&user.account(), &user.nick_name()],
+                &[&user.account, &user.nick_name],
             )
             .is_err()
         {
@@ -30,20 +30,20 @@ impl UserTable {
     }
 
     pub fn get_user(&self, account: &str) -> Result<User, Box<dyn Error>> {
-        let connection = self.database.get_connection();
-        let mut statement = connection.prepare("SELECT * FROM user WHERE account = ?;")?;
-        let mut person_iter = statement.query_map([account], |row| {
-            let account: String = row.get(1)?;
-            let nick_name: String = row.get(2)?;
-            let mut user = User::new(&account);
-            user.set_nick_name(&nick_name);
-            Ok(user)
-        })?;
+        let user = self.database.get_connection().query_row(
+            "SELECT * FROM user WHERE account = ?;",
+            [account],
+            |row| {
+                let account: String = row.get(1)?;
+                let nick_name: String = row.get(2)?;
+                let user = User { account, nick_name };
+                Ok(user)
+            },
+        );
 
-        if let Some(person) = person_iter.next() {
-            return Ok(person.unwrap());
+        match user {
+            Ok(user) => Ok(user),
+            Err(_) => Err("No user found".into()),
         }
-
-        Err("No user found".into())
     }
 }
