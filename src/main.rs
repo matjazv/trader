@@ -14,10 +14,9 @@ use wallet::get_manager;
 
 #[tokio::main]
 async fn main() -> iota_wallet::Result<()> {
-    let database = Database::new();
-    database.create_tables();
-    let user_database = UserTable::new(database);
-    let user_manager = UserManager::init(&user_database);
+    let database = Database::init();
+    let user_table = UserTable::new(database);
+    let user_manager = UserManager::new(&user_table);
 
     let manager = get_manager().await.unwrap();
     // for (_, user) in user_manager.users.read().iter() {
@@ -35,12 +34,6 @@ async fn main() -> iota_wallet::Result<()> {
         let a = account.read().await;
         println!("Accounts: {:#?}", a);
     }
-
-    let mut user = User::new("mihec");
-    user.nick_name = "pihec".to_string();
-    user_database.add_user(&user);
-    let account = user_database.get_user("mihec").unwrap();
-    println!("Found account {:?}", account);
 
     server_run(user_manager).await.unwrap();
 

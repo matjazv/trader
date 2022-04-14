@@ -1,8 +1,12 @@
+use crate::server::{Session, SessionManager};
 use crate::UserManager;
 use askama::Template;
 use http::{Response, StatusCode};
+use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
+use std::sync::Arc;
 use tokio::fs;
+use uuid::Uuid;
 use web3::signing::{keccak256, recover};
 
 pub async fn style_page() -> Result<Box<dyn warp::Reply>, warp::Rejection> {
@@ -63,6 +67,7 @@ fn eth_message(message: String) -> [u8; 32] {
 pub async fn login_page(
     login_user: LoginUser,
     mut user_manager: UserManager,
+    session_manager: Arc<RwLock<SessionManager>>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let message = "Please sign message.";
     let message = eth_message(message.to_string());
@@ -76,7 +81,7 @@ pub async fn login_page(
 
         let response = Response::builder()
             .status(StatusCode::OK)
-            .header("set-cookie", "account=; SameSite=strict")
+            .header("set-cookie", "uuid=; SameSite=strict")
             .body("");
         let response: Box<dyn warp::Reply> = Box::new(response);
         return Ok(response);
@@ -87,7 +92,14 @@ pub async fn login_page(
         println!("New User: {:?}", login_user);
     }
 
-    let cookie_value = format!("account={}; SameSite=strict", login_user.account);
+    let uuid = Uuid::new_v4();
+    let new_session = Session {
+        account: login_user.account.clone(),
+        uuid: uuid,
+    };
+    session_manager.write().insert(new_session);
+
+    let cookie_value = format!("uuid={}; SameSite=strict", uuid);
     let response = Response::builder()
         .status(StatusCode::OK)
         .header("set-cookie", cookie_value)
@@ -97,7 +109,7 @@ pub async fn login_page(
 }
 
 pub async fn logout_page() -> Result<impl warp::Reply, warp::Rejection> {
-    let cookie_value = "account=; SameSite=strict".to_string();
+    let cookie_value = "uuid=; SameSite=strict".to_string();
     let response = Response::builder()
         .status(StatusCode::OK)
         .header("set-cookie", cookie_value)

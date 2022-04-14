@@ -9,19 +9,21 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new() -> Database {
+    pub fn init() -> Database {
         let sqlite_database = "trader.db";
         let manager = SqliteConnectionManager::file(&sqlite_database);
         let pool = r2d2::Pool::builder().build(manager).unwrap();
 
-        Database { connection: pool }
+        let database = Database { connection: pool };
+        database.create_tables();
+        database
     }
 
     pub fn get_connection(&self) -> PooledConnection<SqliteConnectionManager> {
         self.connection.get().unwrap()
     }
 
-    pub fn create_tables(&self) -> bool {
+    fn create_tables(&self) -> bool {
         if self
             .get_connection()
             .execute(

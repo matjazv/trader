@@ -8,7 +8,7 @@ pub struct UserManager {
 }
 
 impl UserManager {
-    pub fn init(user_table: &UserTable) -> UserManager {
+    pub fn new(user_table: &UserTable) -> UserManager {
         UserManager {
             user_table: user_table.clone(),
         }
