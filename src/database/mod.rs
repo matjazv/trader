@@ -23,9 +23,8 @@ impl Database {
         self.connection.get().unwrap()
     }
 
-    fn create_tables(&self) -> bool {
-        if self
-            .get_connection()
+    fn create_tables(&self) {
+        self.get_connection()
             .execute(
                 "CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY,
@@ -34,11 +33,6 @@ impl Database {
                       )",
                 [],
             )
-            .is_err()
-        {
-            return false;
-        }
-
-        true
+            .unwrap();
     }
 }

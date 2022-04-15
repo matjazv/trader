@@ -1,5 +1,5 @@
 use crate::server::{Session, SessionManager};
-use crate::UserManager;
+use crate::{User, UserManager};
 use askama::Template;
 use http::{Response, StatusCode};
 use parking_lot::RwLock;
@@ -88,14 +88,15 @@ pub async fn login_page(
     }
 
     if user_manager.get_user(&login_user.account).is_none() {
-        user_manager.add_user(&login_user.account).unwrap();
+        let new_user = User::new(&login_user.account, "");
+        user_manager.add_user(&new_user).unwrap();
         println!("New User: {:?}", login_user);
     }
 
     let uuid = Uuid::new_v4();
     let new_session = Session {
-        account: login_user.account.clone(),
-        uuid: uuid,
+        account: login_user.account,
+        uuid,
     };
     session_manager.write().insert(new_session);
 
